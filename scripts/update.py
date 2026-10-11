@@ -272,6 +272,30 @@ def build_plan(summary):
     return {"threshold": PICK_THRESHOLD, "actions": actions[::-1], "holding": holding}
 
 
+def write_alert(summary, new, path):
+    """Markdown body for the new-filing notification (GitHub issue / push)."""
+    a = summary["plan"]["actions"][0]
+    secs = {s["ticker"]: s for s in summary["securities"] if s["ticker"]}
+    lines = [f"트럼프 거래 신고서(278-T)가 새로 공개됐습니다: {len(new)}건, 공개일 {a['date']}.", ""]
+    if a.get("period"):
+        lines += [f"트럼프의 실제 거래일: {a['period'][0]} ~ {a['period'][1]}", ""]
+    lines += [f"**매수 ({len(a['buys'])}종목, 비중 {round(summary['plan']['threshold'] * 100)}% 이상)**", ""]
+    for b in a["buys"]:
+        price = secs.get(b["ticker"], {}).get("price")
+        lines.append(f"- {b['ticker']} {b['weight'] * 100:.1f}% — {b['name']}" + (f" (${price:.2f})" if price else ""))
+    # Sells depend on when each follower started, so list everything Trump net-sold
+    # among tickers that were ever a buy order; the page sizes it per follower.
+    ever = {b["ticker"] for act in summary["plan"]["actions"] for b in act["buys"]}
+    sold = [(t, s) for t, s in secs.items() if t in ever and s["latest_net"] < 0]
+    sold.sort(key=lambda kv: kv[1]["latest_net"])
+    lines += ["", "**트럼프가 판 종목 (갖고 있다면 페이지에서 매도 비율 확인)**", ""]
+    lines += [f"- {t} — {s['name']}" for t, s in sold] or ["- 없음"]
+    lines += ["", "주문 수량과 매도 비율: https://shinhyuk.github.io/trump/",
+              "", "공시 원문:"] + [f"- {f['posted']} {f['file']}: {f['url']}" for f in new]
+    with open(path, "w") as fh:
+        fh.write("\n".join(lines) + "\n")
+
+
 def main():
     os.makedirs(FILINGS_DIR, exist_ok=True)
     state_path = os.path.join(DATA, "state.json")
@@ -294,6 +318,10 @@ def main():
         json.dump(summary, fh, ensure_ascii=False, separators=(",", ":"))
     with open(state_path, "w") as fh:
         json.dump(state, fh, indent=1)
+    alert_path = os.environ.get("ALERT_PATH")
+    if alert_path and new and known:
+        write_alert(summary, new, alert_path)
+        print(f"alert written to {alert_path}", file=sys.stderr)
     print(f"new filings: {len(new)}; securities: {len(summary['securities'])}", file=sys.stderr)
 
 
