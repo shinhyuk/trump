@@ -5,6 +5,11 @@ on:
     # 매일 한국시간 08:17 (UTC 23:17) — 미국 장 마감 후 시세 반영
     - cron: "17 23 * * *"
   workflow_dispatch:
+    inputs:
+      test_alert:
+        description: "알림 테스트 (최신 공시 내용으로 테스트 이슈 생성)"
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ["docs/**", "scripts/**", ".github/workflows/update.yml"]
@@ -49,8 +54,12 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           ALERT: ${{ runner.temp }}/alert.md
         run: |
-          [ -f "$ALERT" ] || { echo "no new filing"; exit 0; }
           title="🔔 트럼프 새 공시 $(date -u -d '+9 hours' +%Y-%m-%d) — 오늘 매매 확인"
+          if [ "${{ inputs.test_alert }}" = "true" ]; then
+            python scripts/update.py --alert-only "$ALERT"
+            title="[테스트] $title"
+          fi
+          [ -f "$ALERT" ] || { echo "no new filing"; exit 0; }
           gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$ALERT" --assignee "$GITHUB_REPOSITORY_OWNER" \
             || gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$ALERT"
           if [ -n "$NTFY_TOPIC" ]; then

@@ -326,4 +326,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) == 3 and sys.argv[1] == "--alert-only":
+        # Notification test: render the alert for the latest disclosure as if it were new.
+        summ = json.load(open(os.path.join(DATA, "summary.json")))
+        latest = [f for f in summ["filings"] if f["id"] in summ["latest_ids"]]
+        write_alert(summ, latest, sys.argv[2])
+    else:
+        main()
