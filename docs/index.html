@@ -161,6 +161,9 @@ details.hist .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 
         <label class="field" for="currency">통화
           <select id="currency"><option value="KRW">원</option><option value="USD">달러</option></select>
         </label>
+        <label class="field" for="start">따라 사기 시작한 공시
+          <select id="start"></select>
+        </label>
       </div>
       <div id="orders"></div>
     </div>
@@ -169,7 +172,7 @@ details.hist .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 
 
   <section id="holding">
     <div class="sec-head"><div class="eyebrow">Portfolio</div><h2>따라 산 종목 (지금 들고 있어야 할 것)</h2></div>
-    <p class="muted small">지금까지의 매수·매도 지시를 모두 따랐다면 보유 중인 종목입니다. 처음 시작한다면 위의 오늘 매수 목록만 사면 됩니다.</p>
+    <p class="muted small" id="hold-note"></p>
     <div class="list" id="hold-list"></div>
   </section>
 
@@ -215,8 +218,9 @@ details.hist .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 
   var state = { txLimit: 60 };
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var saved = {};
   try {
-    var saved = JSON.parse(localStorage.getItem("tt-prefs") || "{}");
+    saved = JSON.parse(localStorage.getItem("tt-prefs") || "{}");
     if (saved.budget) $("budget").value = saved.budget;
     if (saved.currency) $("currency").value = saved.currency;
   } catch (e) {}
@@ -240,6 +244,48 @@ details.hist .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 
   function tk(t) { return t ? '<a class="tk" href="https://finance.yahoo.com/quote/' + encodeURIComponent(t) + '" target="_blank" rel="noopener">' + esc(t) + "</a>" : '<span class="tk muted">—</span>'; }
   function chg(p) { return p == null ? "" : '<span class="' + (p >= 0 ? "up" : "down") + '">' + (p >= 0 ? "+" : "") + p.toFixed(2) + "%</span>"; }
   function sec(t) { return D.securities.find(function (s) { return s.ticker === t; }) || {}; }
+  var THRESHOLD = 0.05;
+  // Mirror of build_plan() in scripts/update.py, but the follower only starts
+  // holding from the chosen disclosure date, so sells cover what they bought.
+  function buildPlan(start) {
+    var secs = D.securities.filter(function (s) { return s.ticker; });
+    var byDate = {}, period = {};
+    D.filings.forEach(function (f) {
+      (byDate[f.posted] = byDate[f.posted] || []).push(f.id);
+      period[f.posted] = (period[f.posted] || []).concat([f.date_min, f.date_max].filter(Boolean));
+    });
+    var trumpPos = {}, held = {}, actions = [];
+    Object.keys(byDate).sort().forEach(function (date) {
+      var ids = byDate[date], net = {};
+      secs.forEach(function (s) {
+        var v = ids.reduce(function (a, id) { var b = s.by_filing[id]; return a + (b ? b[0] - b[1] : 0); }, 0);
+        if (v) net[s.ticker] = { v: v, s: s };
+      });
+      var tks = Object.keys(net);
+      var posTotal = tks.reduce(function (a, t) { return a + Math.max(0, net[t].v); }, 0);
+      var picks = tks.filter(function (t) { return net[t].v > 0 && net[t].v >= THRESHOLD * posTotal; })
+        .sort(function (a, b) { return net[b].v - net[a].v || a.localeCompare(b); });
+      var pickTotal = picks.reduce(function (a, t) { return a + net[t].v; }, 0);
+      var active = date >= start, sells = [];
+      if (active) {
+        tks.filter(function (t) { return net[t].v < 0 && held[t]; }).sort(function (a, b) { return net[a].v - net[b].v; }).forEach(function (t) {
+          var before = Math.max(trumpPos[t] || 0, 0), v = net[t].v;
+          var frac = before <= 0 ? 1 : Math.min(1, -v / before);
+          sells.push({ ticker: t, name: net[t].s.name, trump_net: v, fraction: frac, full: frac >= 0.999 || before + v <= 0, bought_on: held[t] });
+        });
+      }
+      tks.forEach(function (t) { trumpPos[t] = (trumpPos[t] || 0) + net[t].v; });
+      sells.forEach(function (x) { if (x.full) delete held[x.ticker]; });
+      var buys = picks.map(function (t) { return { ticker: t, name: net[t].s.name, trump_net: net[t].v, weight: net[t].v / pickTotal, also_held: !!held[t] }; });
+      if (active) buys.forEach(function (b) { if (!held[b.ticker]) held[b.ticker] = date; });
+      var p = (period[date] || []).sort();
+      actions.push({ date: date, period: p.length ? [p[0], p[p.length - 1]] : null, buys: buys, sells: sells, active: active });
+    });
+    var holding = Object.keys(held).map(function (t) { return { ticker: t, since: held[t] }; })
+      .sort(function (a, b) { return b.since.localeCompare(a.since) || a.ticker.localeCompare(b.ticker); });
+    return { threshold: THRESHOLD, actions: actions.reverse(), holding: holding, start: start };
+  }
+
   function daysSince(iso) { return Math.floor((Date.now() - new Date(iso)) / 864e5); }
 
   function renderToday() {
@@ -280,19 +326,20 @@ details.hist .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 
       (a.buys.length ? '<div class="total"><span>실제 매수액 (주수 기준)</span><b>' + money(spent) + ' <span class="muted" style="font-weight:400">· 잔액 ' + money(Math.max(0, budgetUsd - spent)) + "</span></b></div>" : "") +
       '<div class="group-title" style="border-top:1px solid var(--rule)"><span><span class="tag sell">매도</span> ' + a.sells.length + '종목</span><span class="muted">따라 산 종목 중 트럼프가 판 것</span></div>' +
       (sells || '<div class="empty">팔아야 할 종목이 없습니다.</div>');
-    try { localStorage.setItem("tt-prefs", JSON.stringify({ budget: $("budget").value, currency: $("currency").value })); } catch (e) {}
+    savePrefs();
   }
 
   function renderHolding() {
+    $("hold-note").textContent = short(P.start) + " 공시부터 매수·매도 지시를 따랐다면 지금 갖고 있어야 할 종목입니다. 매도 지시는 이 종목들에만 나옵니다.";
     $("hold-list").innerHTML = P.holding.length ? P.holding.map(function (h) {
       var s = sec(h.ticker);
-      return '<div class="row">' + tk(h.ticker) + '<div class="nm"><div>' + esc(s.name || h.name) + "</div><small>" + short(h.since) + " 지시로 매수</small></div>" +
+      return '<div class="row">' + tk(h.ticker) + '<div class="nm"><div>' + esc(s.name) + "</div><small>" + short(h.since) + " 지시로 매수</small></div>" +
         '<div class="r">' + (s.price ? "$" + s.price.toFixed(2) : "—") + "<small>" + chg(s.chg_pct) + "</small></div></div>";
     }).join("") : '<div class="empty">아직 보유 종목이 없습니다.</div>';
   }
 
   function renderHistory() {
-    $("hist").innerHTML = P.actions.map(function (a, i) {
+    $("hist").innerHTML = P.actions.filter(function (a) { return a.active; }).map(function (a, i) {
       return '<details class="hist"' + (i === 0 ? "" : "") + "><summary><b class=\"num\">" + short(a.date) + '</b><span class="muted small">매수 ' + a.buys.length + " · 매도 " + a.sells.length + (i === 0 ? " · 최신" : "") + "</span></summary>" +
         '<div class="chips">' + a.buys.map(function (b) { return '<span class="chip b">+' + esc(b.ticker) + " " + Math.round(b.weight * 100) + "%</span>"; }).join("") +
         a.sells.map(function (s) { return '<span class="chip s">−' + esc(s.ticker) + " " + (s.full ? "전량" : Math.round(s.fraction * 100) + "%") + "</span>"; }).join("") +
@@ -327,6 +374,15 @@ details.hist .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 
     }).join("");
   }
 
+  function savePrefs() {
+    try { localStorage.setItem("tt-prefs", JSON.stringify({ budget: $("budget").value, currency: $("currency").value, start: $("start").value })); } catch (e) {}
+  }
+  function setPlan() {
+    P = buildPlan($("start").value);
+    savePrefs();
+    renderToday(); renderHolding(); renderHistory();
+  }
+  $("start").addEventListener("change", function () { if (D) setPlan(); });
   ["budget", "currency"].forEach(function (id) { $(id).addEventListener("input", function () { if (P) renderOrders(); }); });
   $("q").addEventListener("input", function () { state.txLimit = 60; renderTx(); });
   $("txkind").addEventListener("change", function () { state.txLimit = 60; renderTx(); });
@@ -334,8 +390,13 @@ details.hist .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 
 
   var src = window.TRUMP_DATA ? Promise.resolve(window.TRUMP_DATA) : fetch("data/summary.json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
   src.then(function (d) {
-    D = d; P = d.plan;
-    renderToday(); renderHolding(); renderHistory(); renderTx(); renderFilings();
+    D = d;
+    var dates = Array.from(new Set(d.filings.map(function (f) { return f.posted; }))).sort().reverse();
+    $("start").innerHTML = dates.map(function (x) { return '<option value="' + x + '">' + short(x) + " 공시</option>"; }).join("");
+    // First visit: start from the newest disclosure and remember it, so a later
+    // filing doesn't silently move the start date.
+    $("start").value = dates.indexOf(saved.start) >= 0 ? saved.start : dates[0];
+    setPlan(); renderTx(); renderFilings();
   }).catch(function (e) {
     $("slip-head").innerHTML = "<p>데이터를 불러오지 못했습니다 (" + esc(e.message) + "). 잠시 후 새로고침해 주세요.</p>";
   });
