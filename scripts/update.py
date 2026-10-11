@@ -135,8 +135,7 @@ def build(filings, docs, matcher):
             bk["buy" if buy else "sell"] += m
             bk["n"] += 1
             if t["date"]:
-                s["date_min"] = min(filter(None, [s["date_min"], t["date"]]))
-                s["date_max"] = max(filter(None, [s["date_max"], t["date"]]))
+                s.setdefault("_dates", []).append(t["date"])
 
             sec = secs.setdefault(key, {"key": key, "ticker": ticker, "kind": kind,
                                         "names": defaultdict(int), "by_filing": {},
@@ -154,6 +153,10 @@ def build(filings, docs, matcher):
             if f["id"] in latest_ids:
                 latest_tx.append(dict(t, kind=kind, ticker=ticker, filing=f["id"]))
         s["by_kind"] = dict(s["by_kind"])
+        # OCR-garbled dates scatter outliers; report the 3rd-97th percentile span.
+        ds = sorted(s.pop("_dates", []))
+        if ds:
+            s["date_min"], s["date_max"] = ds[int(len(ds) * 0.03)], ds[min(len(ds) - 1, int(len(ds) * 0.97))]
         filing_summ.append(s)
 
     tickers = [s["ticker"] for s in secs.values() if s["ticker"]]
@@ -210,6 +213,65 @@ def build(filings, docs, matcher):
     }
 
 
+PICK_THRESHOLD = 0.05  # only follow buys that are at least 5% of a filing's net buying
+
+
+def build_plan(summary):
+    """Turn each disclosure date into concrete orders for someone mirroring it.
+
+    Buys: tickers whose net buying is >= PICK_THRESHOLD of that date's total net
+    buying, re-weighted to sum to 100%. Sells: tickers the follower holds (from an
+    earlier buy order) that Trump net-sold, sized as the share of his position
+    he sold."""
+    secs = {s["ticker"]: s for s in summary["securities"] if s["ticker"]}
+    by_date = defaultdict(list)
+    period = defaultdict(list)
+    for f in summary["filings"]:
+        by_date[f["posted"]].append(f["id"])
+        period[f["posted"]] += [d for d in (f["date_min"], f["date_max"]) if d]
+
+    trump_pos = defaultdict(float)  # Trump's estimated net position per ticker
+    held = {}  # ticker -> date of the buy order that put it in the follower's portfolio
+    actions = []
+    for date in sorted(by_date):
+        ids = by_date[date]
+        net = {}
+        for t, s in secs.items():
+            v = sum(s["by_filing"][i][0] - s["by_filing"][i][1] for i in ids if i in s["by_filing"])
+            if v:
+                net[t] = v
+        pos_total = sum(v for v in net.values() if v > 0)
+        picks = sorted(((t, v) for t, v in net.items() if v > 0 and v >= PICK_THRESHOLD * pos_total),
+                       key=lambda kv: -kv[1])
+        pick_total = sum(v for _, v in picks)
+        sells = []
+        for t, v in sorted(net.items(), key=lambda kv: kv[1]):
+            if v >= 0 or t not in held:
+                continue
+            before = max(trump_pos[t], 0)
+            frac = 1.0 if before <= 0 else min(1.0, -v / before)
+            sells.append({"ticker": t, "name": secs[t]["name"], "trump_net": round(v),
+                          "fraction": round(frac, 3), "full": frac >= 0.999 or before + v <= 0,
+                          "bought_on": held[t]})
+        for t, v in net.items():
+            trump_pos[t] += v
+        for s in sells:
+            if s["full"]:
+                held.pop(s["ticker"], None)
+        buys = [{"ticker": t, "name": secs[t]["name"], "kind": secs[t]["kind"], "trump_net": round(v),
+                 "weight": round(v / pick_total, 4), "also_held": t in held}
+                for t, v in picks]
+        for b in buys:
+            held.setdefault(b["ticker"], date)
+        p = sorted(period[date])
+        actions.append({"date": date, "period": [p[0], p[-1]] if p else None,
+                        "buys": buys, "sells": sells})
+    holding = [{"ticker": t, "name": secs[t]["name"], "since": d, "trump_pos": round(trump_pos[t]),
+                "price": secs[t].get("price"), "chg_pct": secs[t].get("chg_pct")}
+               for t, d in sorted(held.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)]
+    return {"threshold": PICK_THRESHOLD, "actions": actions[::-1], "holding": holding}
+
+
 def main():
     os.makedirs(FILINGS_DIR, exist_ok=True)
     state_path = os.path.join(DATA, "state.json")
@@ -221,6 +283,7 @@ def main():
     docs = {f["id"]: parse_filing(f) for f in filings}
     matcher = Matcher.download()
     summary = build(filings, docs, matcher)
+    summary["plan"] = build_plan(summary)
     summary["new_since_last_run"] = [f["id"] for f in new] if known else []
     now = summary["generated_at"]
     state = {"known_ids": [f["id"] for f in filings], "last_checked": now,
