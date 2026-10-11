@@ -62,6 +62,9 @@ jobs:
           if [ "$TEST_ALERT" = "true" ]; then
             python scripts/update.py --alert-only "$ALERT"
             title="[테스트] $title"
+            # Close earlier test issues so only the newest one stays open.
+            gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "[테스트] in:title" --json number --jq '.[].number' \
+              | xargs -r -n1 gh issue close --repo "$GITHUB_REPOSITORY"
           fi
           [ -f "$ALERT" ] || { echo "no new filing"; exit 0; }
           gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$ALERT" --assignee "$GITHUB_REPOSITORY_OWNER" \
