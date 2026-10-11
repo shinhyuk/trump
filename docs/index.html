@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>트럼프 따라사기</title>
+<meta name="description" content="미 정부윤리청(OGE) 278-T 공시로 본 트럼프 대통령의 주식 매매 변동과 따라사기 목록. 매일 자동 갱신.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;800&display=swap">
+<style>
+/* Layout: one reading column like a filed government form — status strip, action card, then ledgers. */
+:root {
+  --paper: #f5f7fa;
+  --sheet: #ffffff;
+  --ink: #17233b;
+  --muted: #5d6b82;
+  --rule: #d9dfe8;
+  --seal: #9a7a2e;
+  --seal-soft: #f3ecd9;
+  --buy: #16794a;
+  --buy-soft: #e3f3ea;
+  --sell: #b4322b;
+  --sell-soft: #f9e5e3;
+  --warn: #8a5a00;
+  --warn-soft: #fbf0d6;
+  --f-display: "Noto Serif KR", "Nanum Myeongjo", Georgia, serif;
+  --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1522; --sheet: #161e2e; --ink: #e4e9f2; --muted: #93a0b6; --rule: #2a3549;
+    --seal: #d2b05f; --seal-soft: #2c2716; --buy: #4cc58a; --buy-soft: #13301f;
+    --sell: #f07a70; --sell-soft: #3a1a18; --warn: #e6b55a; --warn-soft: #33290f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1522; --sheet: #161e2e; --ink: #e4e9f2; --muted: #93a0b6; --rule: #2a3549;
+  --seal: #d2b05f; --seal-soft: #2c2716; --buy: #4cc58a; --buy-soft: #13301f;
+  --sell: #f07a70; --sell-soft: #3a1a18; --warn: #e6b55a; --warn-soft: #33290f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 15px/1.6 var(--f-body);
+  padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 0px);
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 28px 64px; display: grid; gap: 28px; }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
+h2 { font-size: 22px; font-weight: 800; }
+h3 { font-size: 15px; margin: 0; font-weight: 600; }
+p { margin: 0; }
+a { color: inherit; text-underline-offset: 3px; }
+.muted { color: var(--muted); }
+.mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--seal); font-weight: 600; }
+
+header.top { display: grid; gap: 10px; }
+.formline { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--f-mono); font-size: 12px; color: var(--muted); border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); padding: 8px 0; }
+.formline b { color: var(--ink); font-weight: 500; }
+
+.status { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.stat { border-left: 3px solid var(--rule); padding: 2px 0 2px 12px; min-width: 0; }
+.stat .k { font-size: 12px; color: var(--muted); }
+.stat .v { font-size: 20px; font-weight: 600; font-family: var(--f-mono); }
+.stat.hot { border-left-color: var(--seal); }
+
+.verdict { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 20px; display: grid; gap: 8px; }
+.verdict.new { border-color: var(--seal); background: linear-gradient(0deg, var(--sheet), var(--sheet)) padding-box, var(--seal-soft); box-shadow: inset 4px 0 0 var(--seal); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; width: fit-content; }
+.pill.new { background: var(--seal-soft); color: var(--seal); }
+.pill.same { background: var(--paper); color: var(--muted); border: 1px solid var(--rule); }
+
+section { display: grid; gap: 14px; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.field { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+input, select { font: inherit; font-size: 15px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 10px; min-width: 0; }
+input[type="number"] { width: 170px; font-family: var(--f-mono); }
+input[type="search"] { width: 220px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; padding: 7px 12px; border: 0; background: var(--sheet); color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
+
+.table-box { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--paper); position: sticky; top: 0; }
+td.r, th.r { text-align: right; }
+td.name { white-space: normal; min-width: 180px; max-width: 360px; }
+tr:last-child td { border-bottom: 0; }
+.tk { font-family: var(--f-mono); font-weight: 500; background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; padding: 0 6px; font-size: 13px; text-decoration: none; }
+.tag { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 3px; }
+.tag.buy { background: var(--buy-soft); color: var(--buy); }
+.tag.sell { background: var(--sell-soft); color: var(--sell); }
+.tag.newpos { background: var(--seal-soft); color: var(--seal); }
+.up { color: var(--buy); } .down { color: var(--sell); }
+.bar { height: 6px; background: var(--paper); border-radius: 3px; overflow: hidden; min-width: 60px; }
+.bar i { display: block; height: 100%; background: var(--seal); }
+
+.cols { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.cols > * { min-width: 0; }
+.list { display: grid; gap: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }
+.list .row { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+.list .row:last-child { border-bottom: 0; }
+.list .row .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.list h3 { padding: 10px 12px; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; gap: 8px; }
+
+.timeline { display: grid; gap: 0; }
+.tl { display: grid; grid-template-columns: 110px 1fr; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--rule); }
+.tl > div { min-width: 0; }
+.tl .d { font-family: var(--f-mono); font-size: 13px; }
+.flow { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--paper); margin-top: 6px; max-width: 420px; }
+.flow .b { background: var(--buy); } .flow .s { background: var(--sell); }
+
+.note { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-top: 2px solid var(--ink); padding-top: 14px; }
+.note li { margin-bottom: 4px; }
+.empty { padding: 18px; color: var(--muted); }
+.more { font: inherit; font-size: 13px; background: none; border: 1px solid var(--rule); color: var(--ink); padding: 6px 12px; border-radius: 4px; cursor: pointer; width: fit-content; }
+@media (max-width: 560px) {
+  .tl { grid-template-columns: 1fr; gap: 2px; }
+  input[type="number"], input[type="search"] { width: 100%; }
+  .controls .field { flex: 1 1 140px; }
+}
+@media (prefers-reduced-motion: no-preference) { .bar i { transition: width .3s ease; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="formline">
+      <span>출처 <b>OGE Form 278-T</b> (정기 거래 보고서)</span>
+      <span>공시자 <b>Donald J. Trump</b></span>
+      <span>마지막 확인 <b id="checked">—</b></span>
+    </div>
+    <h1>트럼프 따라사기</h1>
+    <p class="muted">트럼프 대통령이 미 정부윤리청에 신고한 주식 매매를 매일 확인해서, 무엇이 바뀌었고 무엇을 사면 되는지 정리합니다.</p>
+  </header>
+
+  <div class="status" id="status"></div>
+  <div class="verdict" id="verdict"><p class="muted">데이터를 불러오는 중…</p></div>
+
+  <section id="buy">
+    <div class="sec-head">
+      <div><div class="eyebrow">Action</div><h2>지금 따라 살 종목</h2></div>
+      <span class="muted" id="buy-basis-label"></span>
+    </div>
+    <div class="controls">
+      <label class="field" for="budget">투자금
+        <input id="budget" type="number" min="0" step="100000" value="10000000">
+      </label>
+      <label class="field" for="currency">통화
+        <select id="currency"><option value="KRW">원 (KRW)</option><option value="USD">달러 (USD)</option></select>
+      </label>
+      <div class="field">기준
+        <div class="seg" role="group" aria-label="추천 기준">
+          <button type="button" data-basis="latest" aria-pressed="true">최신 공시</button>
+          <button type="button" data-basis="recent" aria-pressed="false">최근 3건</button>
+          <button type="button" data-basis="all" aria-pressed="false">전체 누적</button>
+        </div>
+      </div>
+      <label class="field" for="topn">종목 수
+        <select id="topn"><option>10</option><option selected>15</option><option>20</option><option>30</option></select>
+      </label>
+      <label class="field" for="etf">ETF 포함
+        <select id="etf"><option value="1" selected>포함</option><option value="0">개별주만</option></select>
+      </label>
+    </div>
+    <div class="table-box"><table id="buy-table"></table></div>
+    <p class="muted" style="font-size:13px">비중은 트럼프의 순매수 추정액(공시 금액 구간의 중간값 기준)에 비례합니다. 주수는 전일 종가로 계산했고, 소수점 이하는 버립니다.</p>
+  </section>
+
+  <section id="changes">
+    <div class="sec-head">
+      <div><div class="eyebrow">Changes</div><h2>최신 공시 변동</h2></div>
+      <span class="muted" id="changes-label"></span>
+    </div>
+    <div class="cols" id="change-cols"></div>
+  </section>
+
+  <section id="tx">
+    <div class="sec-head">
+      <div><div class="eyebrow">Ledger</div><h2>최신 공시 거래 전체</h2></div>
+      <div class="controls">
+        <input id="q" type="search" placeholder="종목명·티커 검색" aria-label="종목 검색">
+        <select id="txkind" aria-label="거래 종류">
+          <option value="eq">주식·ETF</option><option value="all">전체 (채권 포함)</option>
+          <option value="buy">매수만</option><option value="sell">매도만</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-box" style="max-height:560px"><table id="tx-table"></table></div>
+    <button class="more" id="tx-more" type="button" hidden>더 보기</button>
+  </section>
+
+  <section id="holdings">
+    <div class="sec-head">
+      <div><div class="eyebrow">Estimated holdings</div><h2>누적 순매수 상위 (추정 보유)</h2></div>
+      <span class="muted" id="hold-label"></span>
+    </div>
+    <div class="table-box"><table id="hold-table"></table></div>
+    <button class="more" id="hold-more" type="button">더 보기</button>
+  </section>
+
+  <section id="filings">
+    <div class="sec-head">
+      <div><div class="eyebrow">Filings</div><h2>공시 기록</h2></div>
+      <span class="muted">초록 매수 · 빨강 매도 (추정액 비율)</span>
+    </div>
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+  <div class="note">
+    <strong style="color:var(--ink)">꼭 알아두세요</strong>
+    <ul style="margin:0;padding-left:18px">
+      <li>278-T는 거래 후 최대 30~45일 뒤에 공개됩니다. 여기 보이는 매매는 이미 몇 주 전에 일어난 일입니다.</li>
+      <li>금액은 정확한 값이 아니라 구간($1,001~$15,000 등)으로만 신고됩니다. 모든 금액은 구간 중간값으로 낸 추정치입니다.</li>
+      <li>원본 PDF는 스캔본이라 자동 판독(OCR)에 오류가 있을 수 있습니다. 중요한 결정 전에는 공시 기록의 원문 PDF를 확인하세요.</li>
+      <li>트럼프 측은 계좌가 제3자 금융기관의 재량으로 운용된다고 밝혔습니다. 대통령 본인의 판단이 아닐 수 있습니다.</li>
+      <li>이 페이지는 공개 자료를 정리한 것이며 투자 권유가 아닙니다. 투자 판단과 손실 책임은 본인에게 있습니다.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var D = null;
+  var state = { basis: "latest", txLimit: 150, holdLimit: 30 };
+  try { var saved = JSON.parse(localStorage.getItem("tt-prefs") || "{}"); Object.assign(state, saved.basis ? { basis: saved.basis } : {});
+    if (saved.budget) document.getElementById("budget").value = saved.budget;
+    if (saved.currency) document.getElementById("currency").value = saved.currency;
+  } catch (e) {}
+
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+
+  function usd(n) {
+    var a = Math.abs(n), s = n < 0 ? "-" : "";
+    if (a >= 1e9) return s + "$" + (a / 1e9).toFixed(2) + "B";
+    if (a >= 1e6) return s + "$" + (a / 1e6).toFixed(a >= 1e8 ? 0 : 1) + "M";
+    if (a >= 1e3) return s + "$" + Math.round(a / 1e3) + "K";
+    return s + "$" + Math.round(a);
+  }
+  function krw(n) {
+    var a = Math.abs(n), s = n < 0 ? "-" : "";
+    if (a >= 1e8) { var eok = Math.floor(a / 1e8), man = Math.round((a % 1e8) / 1e4); return s + eok + "억" + (man ? " " + man.toLocaleString() + "만" : "") + "원"; }
+    if (a >= 1e4) return s + Math.round(a / 1e4).toLocaleString() + "만원";
+    return s + Math.round(a).toLocaleString() + "원";
+  }
+  function money(nUsd) { return $("currency").value === "KRW" && D.usdkrw ? krw(nUsd * D.usdkrw) : usd(nUsd); }
+  function fdate(iso) { if (!iso) return "—"; var d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" }); }
+  function short(d) { return d ? d.replace(/^(\d{4})-(\d\d)-(\d\d)$/, "$1.$2.$3") : "—"; }
+  function tkLink(t) { return t ? '<a class="tk" href="https://finance.yahoo.com/quote/' + encodeURIComponent(t) + '" target="_blank" rel="noopener">' + esc(t) + "</a>" : '<span class="muted">—</span>'; }
+  function chg(p) { return p == null ? "" : '<span class="' + (p >= 0 ? "up" : "down") + '">' + (p >= 0 ? "+" : "") + p.toFixed(2) + "%</span>"; }
+
+  var KIND = { stock: "주식", etf: "ETF", bond: "채권", cash: "현금성" };
+
+  function latestFilings() { return D.filings.filter(function (f) { return D.latest_ids.indexOf(f.id) >= 0; }); }
+
+  function renderStatus() {
+    var lf = latestFilings();
+    var n = lf.reduce(function (a, f) { return a + f.n; }, 0);
+    var nb = lf.reduce(function (a, f) { return a + f.n_buy; }, 0);
+    var mins = lf.map(function (f) { return f.date_min; }).filter(Boolean).sort();
+    var maxs = lf.map(function (f) { return f.date_max; }).filter(Boolean).sort();
+    $("checked").textContent = fdate(D.last_checked);
+    $("status").innerHTML = [
+      ["최신 공시 공개일", short(D.latest_posted), true],
+      ["거래 기간", short(mins[0]).slice(2) + " ~ " + short(maxs[maxs.length - 1]).slice(2)],
+      ["거래 건수 (매수/매도)", n.toLocaleString() + " (" + nb.toLocaleString() + "/" + (n - nb).toLocaleString() + ")"],
+      ["누적 공시", D.filings.length + "건"]
+    ].map(function (s) { return '<div class="stat' + (s[2] ? " hot" : "") + '"><div class="k">' + s[0] + '</div><div class="v">' + s[1] + "</div></div>"; }).join("");
+
+    var isNew = (D.new_since_last_run || []).length > 0;
+    var days = Math.floor((Date.now() - new Date(D.latest_posted + "T12:00:00Z")) / 864e5);
+    var top = recommend("latest", 3, true).map(function (s) { return s.ticker; }).join(", ");
+    $("verdict").className = "verdict" + (isNew || days <= 3 ? " new" : "");
+    $("verdict").innerHTML = (isNew || days <= 3
+      ? '<span class="pill new">새 공시</span><h3>' + short(D.latest_posted) + "에 새 거래 내역이 공개됐습니다.</h3>"
+      : '<span class="pill same">변동 없음</span><h3>오늘 확인 결과 새 공시는 없습니다. 마지막 공시는 ' + days + "일 전(" + short(D.latest_posted) + ")입니다.</h3>") +
+      '<p class="muted">최신 공시에서 가장 많이 순매수한 종목은 <b style="color:var(--ink)">' + esc(top) + "</b> 입니다. 아래 목록대로 사면 됩니다." +
+      (isNew || days <= 3 ? "" : " 새 공시가 나오기 전까지 따라살 목록은 바뀌지 않습니다.") + "</p>";
+  }
+
+  function recommend(basis, n, includeEtf) {
+    var ids;
+    if (basis === "latest") ids = D.latest_ids;
+    else if (basis === "recent") {
+      var dates = Array.from(new Set(D.filings.map(function (f) { return f.posted; }))).sort().slice(-3);
+      ids = D.filings.filter(function (f) { return dates.indexOf(f.posted) >= 0; }).map(function (f) { return f.id; });
+    }
+    var rows = D.securities.filter(function (s) { return s.ticker && (includeEtf || s.kind === "stock"); }).map(function (s) {
+      var net;
+      if (!ids) net = s.net;
+      else net = ids.reduce(function (a, id) { var b = s.by_filing[id]; return a + (b ? b[0] - b[1] : 0); }, 0);
+      return Object.assign({}, s, { score: net });
+    }).filter(function (s) { return s.score > 0; });
+    rows.sort(function (a, b) { return b.score - a.score || a.ticker.localeCompare(b.ticker); });
+    return rows.slice(0, n);
+  }
+
+  function renderBuy() {
+    var n = +$("topn").value, inclEtf = $("etf").value === "1";
+    var rows = recommend(state.basis, n, inclEtf);
+    var total = rows.reduce(function (a, r) { return a + r.score; }, 0);
+    var budget = +$("budget").value || 0;
+    var cur = $("currency").value;
+    var budgetUsd = cur === "KRW" ? (D.usdkrw ? budget / D.usdkrw : 0) : budget;
+    $("buy-basis-label").textContent = { latest: "최신 공시(" + short(D.latest_posted) + ") 순매수 기준", recent: "최근 공시 3회 합산 순매수 기준", all: "추적 시작 이후 전체 순매수 기준" }[state.basis] +
+      (D.usdkrw ? " · 환율 " + Math.round(D.usdkrw).toLocaleString() + "원" : "");
+    document.querySelectorAll("[data-basis]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.basis === state.basis); });
+    if (!rows.length) { $("buy-table").innerHTML = '<tr><td class="empty">이 기준으로 순매수한 종목이 없습니다.</td></tr>'; return; }
+    var spent = 0;
+    var body = rows.map(function (r, i) {
+      var w = r.score / total, alloc = budgetUsd * w;
+      var sh = r.price ? Math.floor(alloc / r.price) : null;
+      if (sh) spent += sh * r.price;
+      return "<tr><td class=\"num muted\">" + (i + 1) + "</td><td>" + tkLink(r.ticker) + '</td><td class="name">' + esc(r.name) +
+        (r.first_filing === D.latest_posted ? ' <span class="tag newpos">신규</span>' : "") + (r.kind === "etf" ? ' <span class="tag" style="background:var(--paper)">ETF</span>' : "") +
+        '</td><td class="r num">' + usd(r.score) + '</td><td><div style="display:flex;gap:8px;align-items:center"><div class="bar" style="flex:1"><i style="width:' + (w * 100 / (rows[0].score / total)).toFixed(1) + '%"></i></div><span class="num">' + (w * 100).toFixed(1) + '%</span></div></td><td class="r num"><b>' + money(alloc) + '</b></td><td class="r num">' + (sh == null ? "—" : sh.toLocaleString() + "주") +
+        '</td><td class="r num">' + (r.price ? "$" + r.price.toFixed(2) : "—") + '</td><td class="r num">' + chg(r.chg_pct) + "</td></tr>";
+    }).join("");
+    $("buy-table").innerHTML = '<thead><tr><th>#</th><th>티커</th><th>종목</th><th class="r">트럼프 순매수(추정)</th><th>비중</th><th class="r">내 매수금액</th><th class="r">주수</th><th class="r">현재가</th><th class="r">일간</th></tr></thead><tbody>' + body +
+      '</tbody><tfoot><tr><td colspan="5" class="muted">합계 (주수 기준 실제 매수액)</td><td class="r num"><b>' + money(spent) + '</b></td><td colspan="3" class="muted num">잔액 ' + money(Math.max(0, budgetUsd - spent)) + "</td></tr></tfoot>";
+    try { localStorage.setItem("tt-prefs", JSON.stringify({ basis: state.basis, budget: $("budget").value, currency: cur })); } catch (e) {}
+  }
+
+  function listCard(title, sub, items, fmt) {
+    return '<div class="list"><h3><span>' + title + '</span><span class="muted" style="font-weight:400">' + sub + "</span></h3>" +
+      (items.length ? items.map(fmt).join("") : '<div class="empty">없음</div>') + "</div>";
+  }
+
+  function renderChanges() {
+    var eq = D.securities.filter(function (s) { return s.latest_buy || s.latest_sell; });
+    var newPos = eq.filter(function (s) { return s.first_filing === D.latest_posted && s.latest_net > 0; }).sort(function (a, b) { return b.latest_net - a.latest_net; });
+    var added = eq.filter(function (s) { return s.first_filing !== D.latest_posted && s.latest_net > 0; }).sort(function (a, b) { return b.latest_net - a.latest_net; });
+    var sold = eq.filter(function (s) { return s.latest_net < 0; }).sort(function (a, b) { return a.latest_net - b.latest_net; });
+    var row = function (cls) { return function (s) { return '<div class="row">' + tkLink(s.ticker) + '<span class="nm" title="' + esc(s.name) + '">' + esc(s.name) + '</span><span class="num ' + cls + '">' + (s.latest_net > 0 ? "+" : "") + usd(s.latest_net) + "</span></div>"; }; };
+    var lim = 12;
+    $("changes-label").textContent = short(D.latest_posted) + " 공개분 · 주식·ETF";
+    var bt = D.filings.filter(function (f) { return D.latest_ids.indexOf(f.id) >= 0; }).reduce(function (a, f) { var b = f.by_kind.bond || {}; a.b += b.buy || 0; a.s += b.sell || 0; a.n += b.n || 0; return a; }, { b: 0, s: 0, n: 0 });
+    $("change-cols").innerHTML =
+      listCard('<span class="tag newpos">신규 편입</span>', newPos.length + "종목", newPos.slice(0, lim), row("up")) +
+      listCard('<span class="tag buy">추가 매수</span>', added.length + "종목", added.slice(0, lim), row("up")) +
+      listCard('<span class="tag sell">순매도 · 보유 중이면 정리 검토</span>', sold.length + "종목", sold.slice(0, lim), row("down")) +
+      (bt.n ? '<div class="list"><h3><span>채권 (지방채 등)</span><span class="muted" style="font-weight:400">' + bt.n + '건</span></h3><div class="row"><span class="tag buy">매수</span><span class="nm">채권 매수 추정액</span><span class="num up">' + usd(bt.b) + '</span></div><div class="row"><span class="tag sell">매도</span><span class="nm">채권 매도 추정액</span><span class="num down">' + usd(bt.s) + "</span></div></div>" : "");
+  }
+
+  function renderTx() {
+    var q = $("q").value.trim().toLowerCase(), k = $("txkind").value;
+    var rows = D.latest_transactions.filter(function (t) {
+      if (k === "eq" && t.kind !== "stock" && t.kind !== "etf") return false;
+      if (k === "buy" && t.type !== "purchase") return false;
+      if (k === "sell" && t.type !== "sale") return false;
+      return !q || t.description.toLowerCase().indexOf(q) >= 0 || (t.ticker || "").toLowerCase() === q;
+    });
+    var shown = rows.slice(0, state.txLimit);
+    $("tx-table").innerHTML = '<thead><tr><th>거래일</th><th>구분</th><th>티커</th><th>공시상 종목명</th><th>분류</th><th class="r">금액 구간</th></tr></thead><tbody>' +
+      (shown.length ? shown.map(function (t) {
+        return '<tr><td class="num">' + short(t.date) + '</td><td><span class="tag ' + (t.type === "purchase" ? "buy" : "sell") + '">' + (t.type === "purchase" ? "매수" : t.type === "sale" ? "매도" : "교환") + "</span></td><td>" + tkLink(t.ticker) +
+          '</td><td class="name">' + esc(t.description) + '</td><td class="muted">' + (KIND[t.kind] || "") + '</td><td class="r num">' + usd(t.amount_low) + (t.amount_high ? " ~ " + usd(t.amount_high) : " 초과") + "</td></tr>";
+      }).join("") : '<tr><td colspan="6" class="empty">조건에 맞는 거래가 없습니다.</td></tr>') + "</tbody>";
+    $("tx-more").hidden = rows.length <= state.txLimit;
+    $("tx-more").textContent = "더 보기 (" + (rows.length - shown.length).toLocaleString() + "건 남음)";
+  }
+
+  function renderHold() {
+    var rows = D.securities.filter(function (s) { return s.ticker && s.net > 0; }).slice(0, state.holdLimit);
+    var first = D.filings[0] ? D.filings[0].posted : "";
+    $("hold-label").textContent = short(first) + " 이후 공시 합산 · 주식·ETF";
+    $("hold-table").innerHTML = '<thead><tr><th>#</th><th>티커</th><th>종목</th><th class="r">누적 매수</th><th class="r">누적 매도</th><th class="r">순매수(추정 보유)</th><th class="r">최근 거래</th><th class="r">현재가</th></tr></thead><tbody>' +
+      rows.map(function (s, i) {
+        return '<tr><td class="num muted">' + (i + 1) + "</td><td>" + tkLink(s.ticker) + '</td><td class="name">' + esc(s.name) + '</td><td class="r num">' + usd(s.buy) + '</td><td class="r num">' + usd(s.sell) + '</td><td class="r num"><b>' + usd(s.net) + '</b></td><td class="r num">' + short(s.last_date) + '</td><td class="r num">' + (s.price ? "$" + s.price.toFixed(2) + " " + chg(s.chg_pct) : "—") + "</td></tr>";
+      }).join("") + "</tbody>";
+    $("hold-more").hidden = state.holdLimit >= D.securities.filter(function (s) { return s.ticker && s.net > 0; }).length;
+  }
+
+  function renderTimeline() {
+    var fs = D.filings.slice().sort(function (a, b) { return b.posted.localeCompare(a.posted) || a.file.localeCompare(b.file); });
+    $("timeline").innerHTML = fs.map(function (f) {
+      var tot = f.buy + f.sell || 1;
+      return '<div class="tl"><div class="d">' + short(f.posted) + (D.latest_ids.indexOf(f.id) >= 0 ? ' <span class="tag newpos">최신</span>' : "") + '</div><div><div><a href="' + esc(f.url) + '" target="_blank" rel="noopener">' + esc(f.file) + "</a>" + (f.amended ? ' <span class="tag" style="background:var(--warn-soft);color:var(--warn)">정정</span>' : "") +
+        '</div><div class="muted" style="font-size:13px">거래 ' + f.n.toLocaleString() + "건 · 매수 " + usd(f.buy) + " · 매도 " + usd(f.sell) + " · 거래일 " + short(f.date_min) + " ~ " + short(f.date_max) +
+        '</div><div class="flow" aria-hidden="true"><span class="b" style="width:' + (f.buy / tot * 100).toFixed(1) + '%"></span><span class="s" style="width:' + (f.sell / tot * 100).toFixed(1) + '%"></span></div></div></div>';
+    }).join("");
+  }
+
+  function renderAll() { renderStatus(); renderBuy(); renderChanges(); renderTx(); renderHold(); renderTimeline(); }
+
+  document.querySelectorAll("[data-basis]").forEach(function (b) { b.addEventListener("click", function () { state.basis = b.dataset.basis; renderBuy(); }); });
+  ["budget", "currency", "topn", "etf"].forEach(function (id) { $(id).addEventListener("input", function () { if (D) { renderBuy(); if (id === "currency") renderChanges(); } }); });
+  $("q").addEventListener("input", function () { state.txLimit = 150; renderTx(); });
+  $("txkind").addEventListener("change", function () { state.txLimit = 150; renderTx(); });
+  $("tx-more").addEventListener("click", function () { state.txLimit += 300; renderTx(); });
+  $("hold-more").addEventListener("click", function () { state.holdLimit += 50; renderHold(); });
+
+  var src = window.TRUMP_DATA ? Promise.resolve(window.TRUMP_DATA) : fetch("data/summary.json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  src.then(function (d) { D = d; renderAll(); }).catch(function (e) {
+    $("verdict").innerHTML = '<p>데이터를 불러오지 못했습니다 (' + esc(e.message) + '). 잠시 후 새로고침해 주세요.</p>';
+  });
+})();
+</script>
+</body>
+</html>
