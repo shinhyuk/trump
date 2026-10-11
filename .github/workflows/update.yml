@@ -53,9 +53,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           ALERT: ${{ runner.temp }}/alert.md
+          # Manual run with test_alert, or a push whose commit message has [test-alert].
+          TEST_ALERT: ${{ inputs.test_alert || contains(github.event.head_commit.message, '[test-alert]') }}
         run: |
           title="🔔 트럼프 새 공시 $(date -u -d '+9 hours' +%Y-%m-%d) — 오늘 매매 확인"
-          if [ "${{ inputs.test_alert }}" = "true" ]; then
+          if [ "$TEST_ALERT" = "true" ]; then
             python scripts/update.py --alert-only "$ALERT"
             title="[테스트] $title"
           fi
