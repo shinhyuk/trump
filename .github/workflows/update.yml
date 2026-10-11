@@ -46,6 +46,8 @@ jobs:
           TESSDATA_PREFIX: /usr/share/tesseract-ocr/5/tessdata
           ALERT_PATH: ${{ runner.temp }}/alert.md
         run: python scripts/update.py
+      # Test it: Actions → Daily update → Run workflow with test_alert checked,
+      # or push a commit whose message contains [test-alert].
       # New filing → open an issue (GitHub emails the repo owner and pushes to
       # the GitHub mobile app), and push to ntfy if an NTFY_TOPIC secret is set.
       - name: Notify about new filing

@@ -19,6 +19,12 @@
 - **누적 순매수 상위**: 공시 합산으로 추정한 보유 종목
 - **공시 기록**: 공시별 거래 건수와 원문 PDF 링크
 
+## 알림
+
+새 공시가 나오면 저장소에 이슈가 생기고 저장소 주인에게 지정됩니다. GitHub가 메일과 GitHub 앱 푸시로 알려줍니다.
+`NTFY_TOPIC` 시크릿을 넣으면 ntfy 앱으로도 푸시가 갑니다.
+테스트: **Actions → Daily update → Run workflow** 에서 `test_alert`를 체크하고 실행하세요.
+
 ## 처음 설정
 
 저장소 **Settings → Pages → Build and deployment → Source** 를 **GitHub Actions** 로 바꾼 뒤,
